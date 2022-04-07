@@ -17,6 +17,7 @@ def load_mvtec_dataset(directory, object_type):
             if split_abs_path[1] == object_type:
                 filtered_paths.append(abs_path)
     
+    # Extract all images from the filtered directories
     for filtered_path in filtered_paths:
         split_abs_path = filtered_path.split('\\')
         type = split_abs_path[2]
@@ -29,6 +30,4 @@ def load_mvtec_dataset(directory, object_type):
         elif type == 'train':
             train.append({spec: filtered_path + os.listdir(filtered_path)})
 
-
-    # Extract all images from the filtered directories
     return train, test, ground_truth
