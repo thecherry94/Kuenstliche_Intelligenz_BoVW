@@ -22,14 +22,12 @@ def load_mvtec_dataset(directory, object_type):
         type = split_abs_path[2]
         spec = split_abs_path[3]
 
-        path_helper_func = lambda x: filtered_path + '\\' + x
-
         if type == 'ground_truth':
-            ground_truth.append((spec, list(map(path_helper_func, os.listdir(filtered_path)))))
+            ground_truth.append({spec: filtered_path + os.listdir(filtered_path)})
         elif type == 'test':
-            test.append((spec, list(map(path_helper_func, os.listdir(filtered_path)))))
+            test.append({spec: filtered_path + os.listdir(filtered_path)})
         elif type == 'train':
-            train.append((spec, list(map(path_helper_func, os.listdir(filtered_path)))))
+            train.append({spec: filtered_path + os.listdir(filtered_path)})
 
 
     # Extract all images from the filtered directories
