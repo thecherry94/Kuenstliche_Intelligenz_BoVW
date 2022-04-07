@@ -30,3 +30,6 @@ codegen/
 
 # Octave session info
 octave-workspace
+
+# Data folder
+mvtec_anomaly_detection_data/*
