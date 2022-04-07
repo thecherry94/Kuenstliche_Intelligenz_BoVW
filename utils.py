@@ -7,7 +7,7 @@ def load_mvtec_dataset_paths(directory, object_type):
     Loads the MVTEC dataset of the specified object type. (bottle, cable, capsule, etc.)
     """
 
-    ground_truth_paths = []
+    ground_truth_paths = {}
     test_paths = {'good': [], 'bad': []}
     train_paths = {'good': [], 'bad': []}
 
@@ -28,11 +28,11 @@ def load_mvtec_dataset_paths(directory, object_type):
         path_helper_func = lambda x: os.path.join(filtered_path, x)
 
         if type == 'ground_truth':
-            ground_truth_paths.append({spec: list(map(path_helper_func, os.listdir(filtered_path)))})
+            ground_truth_paths[spec] = list(map(path_helper_func, os.listdir(filtered_path)))
         elif type == 'test':
-            test_paths['bad' if spec != 'good' else 'good'].append(list(map(path_helper_func, os.listdir(filtered_path))))
+            test_paths['bad' if spec != 'good' else 'good'].extend(list(map(path_helper_func, os.listdir(filtered_path))))
         elif type == 'train':
-            train_paths['bad' if spec != 'good' else 'good'].append(list(map(path_helper_func, os.listdir(filtered_path))))
+            train_paths['bad' if spec != 'good' else 'good'].extend(list(map(path_helper_func, os.listdir(filtered_path))))
 
     return train_paths, test_paths, ground_truth_paths
 
