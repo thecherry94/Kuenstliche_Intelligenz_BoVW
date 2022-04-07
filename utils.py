@@ -1,6 +1,6 @@
 import os
 
-def load_mvtec_dataset(directory, object_type):
+def load_mvtec_dataset_paths(directory, object_type):
     """
     Loads the MVTEC dataset of the specified object type. (bottle, cable, capsule, etc.)
     """
@@ -31,3 +31,6 @@ def load_mvtec_dataset(directory, object_type):
             train.append({spec: filtered_path + os.listdir(filtered_path)})
 
     return train, test, ground_truth
+
+
+def 
