@@ -17,6 +17,10 @@ def load_mvtec_dataset_paths(directory, object_type):
     Loads the MVTEC dataset of the specified object type. (bottle, cable, capsule, etc.)
     """
 
+    # Check if directory exists
+    if not os.path.isdir(directory):
+        raise Exception(f"Can't load dataset: Directory \"{os.path.abspath(directory)}\" does not exist.")
+
     ground_truth_paths = {}
     test_paths = {'good': [], 'bad': []}
     train_paths = {'good': [], 'bad': []}
