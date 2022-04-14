@@ -111,7 +111,7 @@ def __load_and_label_data(dataset, resize_dim=0):
     
     return np.array(train_images), np.array(train_labels), np.array(test_images), np.array(test_labels)
 
-def get_image_features(images, k = 200):
+def get_image_features(images, k=200):
     """
     Returns the image features for the specified images.
     :param images: The images to extract features from.
@@ -140,12 +140,12 @@ def get_image_features(images, k = 200):
     
     # Apply k-means clustering to the descriptors
     voc, variance = kmeans(descriptors.astype(float), k, 1)
-    im_features = np.zeros((len(images), k), "float32")
 
     # Compute the histogram of features
+    img_features = np.zeros((len(images), k), "float32")
     for i in range(len(images)):
         words, distance = vq(desc_list[i], voc)
         for w in words:
-            im_features[i][w] += 1
+            img_features[i][w] += 1
 
-    return im_features
+    return img_features
