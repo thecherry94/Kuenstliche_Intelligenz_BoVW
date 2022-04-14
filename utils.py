@@ -5,16 +5,26 @@ import numpy as np
 def load_mvtec_dataset(directory, object_type, resize_dim=0):
     """
     Loads the MVTEC dataset of the specified object type. (bottle, cable, capsule, etc.)
+
+    :param str directory: The relative path to the dataset directory.
+    :param str object_type: The object type to load. (bottle, cable, capsule, etc.)
+    :param int resize_dim: The dimension to resize the images to. Default image sizes are 900x900 (0 for no resizing).
+    :return: A tuple containing the training images, training labels, testing images, and testing labels.
     """
 
-    train_paths, test_paths, ground_truth_paths = load_mvtec_dataset_paths(directory, object_type)
-    train_images, train_labels, test_images, test_labels = load_and_label_data((train_paths, test_paths), resize_dim)
+    train_paths, test_paths, ground_truth_paths = __filter_mvtec_dataset_paths(directory, object_type)
+    train_images, train_labels, test_images, test_labels = __load_and_label_data((train_paths, test_paths), resize_dim)
     return train_images, train_labels, test_images, test_labels, ground_truth_paths
 
 
-def load_mvtec_dataset_paths(directory, object_type):
+def __filter_mvtec_dataset_paths(directory, object_type):
     """
-    Loads the MVTEC dataset of the specified object type. (bottle, cable, capsule, etc.)
+    Internal function. Shoudln't be called directly.
+    
+    Recursively walks through the entire dataset directory and returns the paths to all images of the specified object type.
+
+    :param str directory: The relative path to the dataset directory.
+    :param str object_type: The object type to load. (bottle, cable, capsule, etc.)
     """
 
     # Check if directory exists
@@ -51,7 +61,15 @@ def load_mvtec_dataset_paths(directory, object_type):
     return train_paths, test_paths, ground_truth_paths
 
 
-def load_and_label_data(dataset, resize_dim=0):
+def __load_and_label_data(dataset, resize_dim=0):
+    """
+    Internal function. Shoudln't be called directly.
+
+    Loads and labels the specified dataset.
+
+    :param tuple dataset: A tuple containing the training and testing image paths.
+    :param int resize_dim: The dimension to resize the images to. Default image sizes are 900x900 (0 for no resizing).
+    """
     train_paths, test_paths = dataset
 
     # Load all training images
@@ -63,6 +81,7 @@ def load_and_label_data(dataset, resize_dim=0):
             image = cv2.resize(image, (resize_dim, resize_dim))
         train_images.append(image)
         train_labels.append(1)
+    
     
     for path in train_paths['bad']:
         image = cv2.imread(path)
@@ -89,3 +108,21 @@ def load_and_label_data(dataset, resize_dim=0):
         test_labels.append(0)
     
     return np.array(train_images), np.array(train_labels), np.array(test_images), np.array(test_labels)
+
+
+def get_image_descriptors(images):
+    """
+    Returns the image descriptors for the specified images.
+
+    :param images: The images to get descriptors for.
+    :return: The image descriptors.
+    """
+    orb = cv2.ORB_create()
+    desc_list = []
+    for img in images:
+        kp = orb.detect(img, None)
+        keypoints, descriptor = orb.compute(img, kp)
+        desc_list.append(descriptor)
+
+    return np.array(desc_list)
+    
