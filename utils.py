@@ -3,6 +3,7 @@ import cv2
 from cv2 import COLOR_BGR2GRAY
 import numpy as np
 from scipy.cluster.vq import kmeans, vq
+import tensorflow as tf
 
 def load_mvtec_dataset(directory, object_type, resize_dim=0):
     """
@@ -149,3 +150,16 @@ def get_image_features(images, k=200):
             img_features[i][w] += 1
 
     return img_features
+
+
+# load dataset using image data generator
+def load_dataset(directory, object_type, resize_dim=0):
+    categories = ['train', 'test', 'ground_truth']
+    main_path = os.path.join(directory, object_type)
+    
+    dataset = {}
+    for category in categories:
+        path = os.path.join(main_path, category)
+        dataset[category] = (tf.keras.utils.image_dataset_from_directory(path, image_size=(resize_dim, resize_dim), seed=123, batch_size=32))
+    
+    return dataset
