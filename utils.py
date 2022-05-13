@@ -1,6 +1,9 @@
 import os
 import cv2
+from cv2 import COLOR_BGR2GRAY
 import numpy as np
+from scipy.cluster.vq import kmeans, vq
+import tensorflow as tf
 
 def load_mvtec_dataset(directory, object_type, resize_dim=0):
     """
@@ -76,14 +79,15 @@ def __load_and_label_data(dataset, resize_dim=0):
     train_images = []
     train_labels = []
     for path in train_paths['good']:
-        image = cv2.imread(path)
+        image = cv2.cvtColor(cv2.imread(path), cv2.COLOR_BGR2GRAY)
         if resize_dim != 0:
             image = cv2.resize(image, (resize_dim, resize_dim))
         train_images.append(image)
         train_labels.append(1)
     
+    
     for path in train_paths['bad']:
-        image = cv2.imread(path)
+        image = cv2.cvtColor(cv2.imread(path), cv2.COLOR_BGR2GRAY)
         if resize_dim != 0:
             image = cv2.resize(image, (resize_dim, resize_dim))
         train_images.append(image)
@@ -93,17 +97,69 @@ def __load_and_label_data(dataset, resize_dim=0):
     test_images = []
     test_labels = []
     for path in test_paths['good']:
-        image = cv2.imread(path)
+        image = cv2.cvtColor(cv2.imread(path), cv2.COLOR_BGR2GRAY)
         if resize_dim != 0:
             image = cv2.resize(image, (resize_dim, resize_dim))
         test_images.append(image)
         test_labels.append(1)
     
     for path in test_paths['bad']:
-        image = cv2.imread(path)
+        image = cv2.cvtColor(cv2.imread(path), cv2.COLOR_BGR2GRAY)
         if resize_dim != 0:
             image = cv2.resize(image, (resize_dim, resize_dim))
         test_images.append(image)
         test_labels.append(0)
     
     return np.array(train_images), np.array(train_labels), np.array(test_images), np.array(test_labels)
+
+def get_image_features(images, k=200):
+    """
+    Returns the image features for the specified images.
+    :param images: The images to extract features from.
+    :param k: The number of clusters to use.
+    :return image_features: The extracted image features.
+    """
+
+    orb = cv2.ORB_create()
+    desc_list = []
+    kp_list = []
+
+    # Get image keypoints and descriptors
+    for img in images:
+        kp = orb.detect(img, None)
+        kp, descriptor = orb.compute(img, kp)
+        desc_list.append(descriptor)
+        kp_list.append(kp)
+
+    kp_list = np.array(kp_list) 
+    desc_list = np.array(desc_list)
+
+    # Reshape descriptors to be a list of vectors
+    descriptors = desc_list[0][1]
+    for descriptor in desc_list[1:]:
+        descriptors=np.vstack((descriptors,descriptor))
+    
+    # Apply k-means clustering to the descriptors
+    voc, variance = kmeans(descriptors.astype(float), k, 1)
+
+    # Compute the histogram of features
+    img_features = np.zeros((len(images), k), "float32")
+    for i in range(len(images)):
+        words, distance = vq(desc_list[i], voc)
+        for w in words:
+            img_features[i][w] += 1
+
+    return img_features
+
+
+# load dataset using image data generator
+def load_dataset(directory, object_type, resize_dim=0):
+    categories = ['train', 'test', 'ground_truth']
+    main_path = os.path.join(directory, object_type)
+    
+    dataset = {}
+    for category in categories:
+        path = os.path.join(main_path, category)
+        dataset[category] = (tf.keras.utils.image_dataset_from_directory(path, image_size=(resize_dim, resize_dim), seed=123, batch_size=32))
+    
+    return dataset
