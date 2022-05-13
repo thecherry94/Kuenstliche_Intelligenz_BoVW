@@ -33,3 +33,5 @@ octave-workspace
 
 # Data folder
 mvtec_anomaly_detection_data/*
+
+mvtec_anomaly_detection_data_umsortiert/*
