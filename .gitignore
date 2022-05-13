@@ -34,10 +34,9 @@ octave-workspace
 # Data folder
 mvtec_anomaly_detection_data/*
 
-<<<<<<< HEAD
 mvtec_anomaly_detection_data_umsortiert/*
-=======
 # Python cache
 __pycache__/*
 *.pyc
->>>>>>> fef266e6104776d5b0bf066f1b80de19b238637a
+myenv/*
+yolov5/*

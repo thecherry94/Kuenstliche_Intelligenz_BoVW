@@ -79,7 +79,8 @@ def __load_and_label_data(dataset, resize_dim=0):
     train_images = []
     train_labels = []
     for path in train_paths['good']:
-        image = cv2.cvtColor(cv2.imread(path), cv2.COLOR_BGR2GRAY)
+        image = cv2.imread(path)
+        #image = cv2.cvtColor(cv2.imread(path), cv2.COLOR_BGR2GRAY)
         if resize_dim != 0:
             image = cv2.resize(image, (resize_dim, resize_dim))
         train_images.append(image)
@@ -87,7 +88,8 @@ def __load_and_label_data(dataset, resize_dim=0):
     
     
     for path in train_paths['bad']:
-        image = cv2.cvtColor(cv2.imread(path), cv2.COLOR_BGR2GRAY)
+        image = cv2.imread(path)
+        #image = cv2.cvtColor(cv2.imread(path), cv2.COLOR_BGR2GRAY)
         if resize_dim != 0:
             image = cv2.resize(image, (resize_dim, resize_dim))
         train_images.append(image)
@@ -97,14 +99,16 @@ def __load_and_label_data(dataset, resize_dim=0):
     test_images = []
     test_labels = []
     for path in test_paths['good']:
-        image = cv2.cvtColor(cv2.imread(path), cv2.COLOR_BGR2GRAY)
+        image = cv2.imread(path)
+        #image = cv2.cvtColor(cv2.imread(path), cv2.COLOR_BGR2GRAY)
         if resize_dim != 0:
             image = cv2.resize(image, (resize_dim, resize_dim))
         test_images.append(image)
         test_labels.append(1)
     
     for path in test_paths['bad']:
-        image = cv2.cvtColor(cv2.imread(path), cv2.COLOR_BGR2GRAY)
+        image = cv2.imread(path)
+        #image = cv2.cvtColor(cv2.imread(path), cv2.COLOR_BGR2GRAY)
         if resize_dim != 0:
             image = cv2.resize(image, (resize_dim, resize_dim))
         test_images.append(image)
