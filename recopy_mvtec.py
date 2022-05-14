@@ -1,7 +1,9 @@
 import os
-from utils import recopy_mvtec
+from utils import recopy_mvtec_yolo
+from utils import recopy_mvtec_resnet
 
-dest_directory = 'mvtec_anomaly_detection_data_yolo'
+dest_directory_resnet = 'mvtec_anomaly_detection_data_yolo'
+dest_directory_yolo = 'mvtec_anomaly_detection_data_yolo'
 img_directory = 'mvtec_anomaly_detection_data'
 
 MVTEC_CATEGORIES = [
@@ -23,8 +25,8 @@ MVTEC_CATEGORIES = [
 ]
 
 create_dir = 1
-test_val_size = 0.25
-recopy_mvtec(dest_directory, img_directory,create_dir, MVTEC_CATEGORIES, test_val_size, 512)
+#recopy_mvtec_resnet(dest_directory_yolo, img_directory,create_dir, MVTEC_CATEGORIES, 0.2, 512)
+recopy_mvtec_yolo(dest_directory_yolo, img_directory,create_dir, MVTEC_CATEGORIES, 0.2, 512)
 
 
 
