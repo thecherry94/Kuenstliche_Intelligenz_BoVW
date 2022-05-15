@@ -39,4 +39,4 @@ mvtec_anomaly_detection_data_umsortiert/*
 __pycache__/*
 *.pyc
 myenv/*
-yolov5/*
+yolov5/

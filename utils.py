@@ -298,9 +298,10 @@ def recopy_mvtec_yolo(dest_directory, img_directory, create_dir, MVTEC_CATEGORIE
             os.mkdir(f"{dest_directory}/{cat}/images")
             os.mkdir(f"{dest_directory}/{cat}/images/train")
             os.mkdir(f"{dest_directory}/{cat}/images/test")
+            os.mkdir(f"{dest_directory}/{cat}/images/val")
             os.mkdir(f"{dest_directory}/{cat}/labels")
             os.mkdir(f"{dest_directory}/{cat}/labels/train")
-            os.mkdir(f"{dest_directory}/{cat}/labels/test")
+            os.mkdir(f"{dest_directory}/{cat}/labels/val")
             
         train_images, train_labels, test_images, test_labels, ground_truth_paths = load_mvtec_dataset(img_directory, cat)
         print(cat)
@@ -312,11 +313,14 @@ def recopy_mvtec_yolo(dest_directory, img_directory, create_dir, MVTEC_CATEGORIE
             if test_labels[i] == 0:
                 bad_images.append(img)
         
-        bad_train, bad_test = train_test_split(bad_images, test_size=test_val_size, random_state=1)
+        bad_train, bad_rem = train_test_split(bad_images, test_size=test_val_size, random_state=1)
+        bad_test, bad_val = train_test_split(bad_rem, test_size=0.5, random_state=1)
 
         for i in range(len(bad_train)):
-            cv2.imwrite(f"{dest_directory}/{cat}/images/train{i:03}.png", bad_train[i])
+            cv2.imwrite(f"{dest_directory}/{cat}/images/train/{i:03}.png", bad_train[i])
         for i in range(len(bad_test)):
-            cv2.imwrite(f"{dest_directory}/{cat}/images/test{i:03}.png", bad_test[i])
+            cv2.imwrite(f"{dest_directory}/{cat}/images/test/{i:03}.png", bad_test[i])
+        for i in range(len(bad_val)):
+            cv2.imwrite(f"{dest_directory}/{cat}/images/val/{i:03}.png", bad_val[i])
         
     return True
