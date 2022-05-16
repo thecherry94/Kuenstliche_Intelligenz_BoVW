@@ -1,9 +1,12 @@
 import os
 import cv2
+import glob
 from cv2 import COLOR_BGR2GRAY
 import numpy as np
 from scipy.cluster.vq import kmeans, vq
 import tensorflow as tf
+from sklearn.model_selection import train_test_split
+
 
 def load_mvtec_dataset(directory, object_type, resize_dim=0):
     """
@@ -79,7 +82,8 @@ def _load_and_label_data(dataset, resize_dim=0):
     train_images = []
     train_labels = []
     for path in train_paths['good']:
-        image = cv2.cvtColor(cv2.imread(path), cv2.COLOR_BGR2GRAY)
+        image = cv2.imread(path)
+        #image = cv2.cvtColor(cv2.imread(path), cv2.COLOR_BGR2GRAY)
         if resize_dim != 0:
             image = cv2.resize(image, (resize_dim, resize_dim))
         train_images.append(image)
@@ -87,7 +91,8 @@ def _load_and_label_data(dataset, resize_dim=0):
     
     
     for path in train_paths['bad']:
-        image = cv2.cvtColor(cv2.imread(path), cv2.COLOR_BGR2GRAY)
+        image = cv2.imread(path)
+        #image = cv2.cvtColor(cv2.imread(path), cv2.COLOR_BGR2GRAY)
         if resize_dim != 0:
             image = cv2.resize(image, (resize_dim, resize_dim))
         train_images.append(image)
@@ -97,14 +102,16 @@ def _load_and_label_data(dataset, resize_dim=0):
     test_images = []
     test_labels = []
     for path in test_paths['good']:
-        image = cv2.cvtColor(cv2.imread(path), cv2.COLOR_BGR2GRAY)
+        image = cv2.imread(path)
+        #image = cv2.cvtColor(cv2.imread(path), cv2.COLOR_BGR2GRAY)
         if resize_dim != 0:
             image = cv2.resize(image, (resize_dim, resize_dim))
         test_images.append(image)
         test_labels.append(1)
     
     for path in test_paths['bad']:
-        image = cv2.cvtColor(cv2.imread(path), cv2.COLOR_BGR2GRAY)
+        image = cv2.imread(path)
+        #image = cv2.cvtColor(cv2.imread(path), cv2.COLOR_BGR2GRAY)
         if resize_dim != 0:
             image = cv2.resize(image, (resize_dim, resize_dim))
         test_images.append(image)
@@ -150,3 +157,170 @@ def get_image_features(images, k=200):
             img_features[i][w] += 1
 
     return img_features
+
+
+# load dataset using image data generator
+def load_dataset(directory, object_type, resize_dim=0):
+    categories = ['train', 'test', 'ground_truth']
+    main_path = os.path.join(directory, object_type)
+    
+    dataset = {}
+    for category in categories:
+        path = os.path.join(main_path, category)
+        dataset[category] = (tf.keras.utils.image_dataset_from_directory(path, image_size=(resize_dim, resize_dim), seed=123, batch_size=32))
+    
+    return dataset
+
+
+def recopy_mvtec_resnet(dest_directory, img_directory, create_dir, MVTEC_CATEGORIES, test_val_size, resize_dim=0):
+
+    if create_dir == 1: 
+        os.mkdir(f"{dest_directory}")
+    for cat in MVTEC_CATEGORIES:
+        if create_dir == 1:
+            os.mkdir(f"{dest_directory}/{cat}")
+            os.mkdir(f"{dest_directory}/{cat}/train")
+            os.mkdir(f"{dest_directory}/{cat}/train/good")
+            os.mkdir(f"{dest_directory}/{cat}/train/bad")
+            os.mkdir(f"{dest_directory}/{cat}/test")
+            os.mkdir(f"{dest_directory}/{cat}/test/good")
+            os.mkdir(f"{dest_directory}/{cat}/test/bad")
+            os.mkdir(f"{dest_directory}/{cat}/val")
+            os.mkdir(f"{dest_directory}/{cat}/val/good")
+            os.mkdir(f"{dest_directory}/{cat}/val/bad")
+        train_images, train_labels, test_images, test_labels, ground_truth_paths = load_mvtec_dataset(img_directory, cat)
+        print(cat)
+        good_images = []
+        for img in train_images:
+            if resize_dim != 0:
+                img = cv2.resize(img, (resize_dim, resize_dim))
+            good_images.append(img)
+        
+        bad_images = []
+        for i in range(len(test_images)):
+            if resize_dim != 0:
+                img = cv2.resize(test_images[i], (resize_dim, resize_dim))
+            if test_labels[i] == 1:
+                good_images.append(img)
+            else:
+                bad_images.append(img)
+    
+        good_train, good_rem = train_test_split(good_images, test_size=test_val_size, random_state=1)
+        good_test, good_val = train_test_split(good_rem, test_size=0.5, random_state=1)
+
+        for i in range(len(good_train)):
+            cv2.imwrite(f"{dest_directory}/{cat}/train/good/{i:03}.png", good_train[i])
+        for i in range(len(good_test)):
+            cv2.imwrite(f"{dest_directory}/{cat}/test/good/{i:03}.png", good_test[i])
+        for i in range(len(good_val)):
+            cv2.imwrite(f"{dest_directory}/{cat}/val/good/{i:03}.png", good_val[i])
+        
+        bad_train, bad_rem = train_test_split(bad_images, test_size=test_val_size, random_state=1)
+        bad_test, bad_val = train_test_split(bad_rem, test_size=0.5, random_state=1)
+
+        for i in range(len(bad_train)):
+            cv2.imwrite(f"{dest_directory}/{cat}/train/bad/{i:03}.png", bad_train[i])
+        for i in range(len(bad_test)):
+            cv2.imwrite(f"{dest_directory}/{cat}/test/bad/{i:03}.png", bad_test[i])
+        for i in range(len(bad_val)):
+            cv2.imwrite(f"{dest_directory}/{cat}/val/bad/{i:03}.png", bad_val[i])
+        
+    return True
+
+
+def load_mvtec(directory, object_type, resize_dim=0):
+    train_images = []
+    train_labels = []
+    train_path=(f"{directory}/{object_type}/train")
+    for path in glob.glob(f"{train_path}/good/*"):
+        image = cv2.imread(path)
+        if resize_dim != 0:
+            image = cv2.resize(image, (resize_dim, resize_dim))
+        train_images.append(image)
+        train_labels.append(1)
+    
+    
+    for path in glob.glob(f"{train_path}/bad/*"):
+        image = cv2.imread(path)
+        if resize_dim != 0:
+            image = cv2.resize(image, (resize_dim, resize_dim))
+        train_images.append(image)
+        train_labels.append(0)
+    
+    # Load all testing images
+    test_images = []
+    test_labels = []
+    test_path=(f"{directory}/{object_type}/test")
+    for path in glob.glob(f"{test_path}/good/*"):
+        image = cv2.imread(path)
+        if resize_dim != 0:
+            image = cv2.resize(image, (resize_dim, resize_dim))
+        test_images.append(image)
+        test_labels.append(1)
+    
+    
+    for path in glob.glob(f"{test_path}/bad/*"):
+        image = cv2.imread(path)
+        if resize_dim != 0:
+            image = cv2.resize(image, (resize_dim, resize_dim))
+        test_images.append(image)
+        test_labels.append(0)
+    
+    # Load all validation images
+    val_images = []
+    val_labels = []
+    val_path=(f"{directory}/{object_type}/val")
+    for path in glob.glob(f"{val_path}/good/*"):
+        image = cv2.imread(path)
+        if resize_dim != 0:
+            image = cv2.resize(image, (resize_dim, resize_dim))
+        val_images.append(image)
+        val_labels.append(1)
+    
+    
+    for path in glob.glob(f"{val_path}/bad/*"):
+        image = cv2.imread(path)
+        if resize_dim != 0:
+            image = cv2.resize(image, (resize_dim, resize_dim))
+        val_images.append(image)
+        val_labels.append(0)
+    
+    return np.array(train_images), np.array(train_labels), np.array(test_images), np.array(test_labels), np.array(val_images), np.array(val_labels)
+
+
+def recopy_mvtec_yolo(dest_directory, img_directory, create_dir, MVTEC_CATEGORIES, test_val_size, resize_dim=0):
+
+    if create_dir == 1: 
+        os.mkdir(f"{dest_directory}")
+    for cat in MVTEC_CATEGORIES:
+        if create_dir == 1:
+            os.mkdir(f"{dest_directory}/{cat}")
+            os.mkdir(f"{dest_directory}/{cat}/images")
+            os.mkdir(f"{dest_directory}/{cat}/images/train")
+            os.mkdir(f"{dest_directory}/{cat}/images/test")
+            os.mkdir(f"{dest_directory}/{cat}/images/val")
+            os.mkdir(f"{dest_directory}/{cat}/labels")
+            os.mkdir(f"{dest_directory}/{cat}/labels/train")
+            os.mkdir(f"{dest_directory}/{cat}/labels/val")
+            
+        train_images, train_labels, test_images, test_labels, ground_truth_paths = load_mvtec_dataset(img_directory, cat)
+        print(cat)
+       
+        bad_images = []
+        for i in range(len(test_images)):
+            if resize_dim != 0:
+                img = cv2.resize(test_images[i], (resize_dim, resize_dim))
+            if test_labels[i] == 0:
+                bad_images.append(img)
+        
+        bad_train, bad_rem = train_test_split(bad_images, test_size=test_val_size, random_state=1)
+        bad_test, bad_val = train_test_split(bad_rem, test_size=0.5, random_state=1)
+
+        for i in range(len(bad_train)):
+            cv2.imwrite(f"{dest_directory}/{cat}/images/train/{i:03}.png", bad_train[i])
+        for i in range(len(bad_test)):
+            cv2.imwrite(f"{dest_directory}/{cat}/images/test/{i:03}.png", bad_test[i])
+        for i in range(len(bad_val)):
+            cv2.imwrite(f"{dest_directory}/{cat}/images/val/{i:03}.png", bad_val[i])
+        
+    return True
