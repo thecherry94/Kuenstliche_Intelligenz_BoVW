@@ -15,12 +15,12 @@ def load_mvtec_dataset(directory, object_type, resize_dim=0):
     :return: A tuple containing the training images, training labels, testing images, and testing labels.
     """
 
-    train_paths, test_paths, ground_truth_paths = __filter_mvtec_dataset_paths(directory, object_type)
-    train_images, train_labels, test_images, test_labels = __load_and_label_data((train_paths, test_paths), resize_dim)
+    train_paths, test_paths, ground_truth_paths = _filter_mvtec_dataset_paths(directory, object_type)
+    train_images, train_labels, test_images, test_labels = _load_and_label_data((train_paths, test_paths), resize_dim)
     return train_images, train_labels, test_images, test_labels, ground_truth_paths
 
 
-def __filter_mvtec_dataset_paths(directory, object_type):
+def _filter_mvtec_dataset_paths(directory, object_type):
     """
     Internal function. Shoudln't be called directly.
     
@@ -64,7 +64,7 @@ def __filter_mvtec_dataset_paths(directory, object_type):
     return train_paths, test_paths, ground_truth_paths
 
 
-def __load_and_label_data(dataset, resize_dim=0):
+def _load_and_label_data(dataset, resize_dim=0):
     """
     Internal function. Shoudln't be called directly.
 
@@ -150,16 +150,3 @@ def get_image_features(images, k=200):
             img_features[i][w] += 1
 
     return img_features
-
-
-# load dataset using image data generator
-def load_dataset(directory, object_type, resize_dim=0):
-    categories = ['train', 'test', 'ground_truth']
-    main_path = os.path.join(directory, object_type)
-    
-    dataset = {}
-    for category in categories:
-        path = os.path.join(main_path, category)
-        dataset[category] = (tf.keras.utils.image_dataset_from_directory(path, image_size=(resize_dim, resize_dim), seed=123, batch_size=32))
-    
-    return dataset
