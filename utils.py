@@ -324,3 +324,56 @@ def recopy_mvtec_yolo(dest_directory, img_directory, create_dir, MVTEC_CATEGORIE
             cv2.imwrite(f"{dest_directory}/{cat}/images/val/{i:03}.png", bad_val[i])
         
     return True
+
+
+def _extract_bbox(img, as_percent=True):
+    """
+    Extracts the bounding box of the image.
+    """
+    img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    ret, thresh = cv2.threshold(img_gray, 127, 255, 0)
+    contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    cnt = contours[0]
+    x, y, w, h = cv2.boundingRect(cnt)
+    if as_percent:
+        x = x / img.shape[1]
+        y = y / img.shape[0]
+        w = w / img.shape[1]
+        h = h / img.shape[0]
+    return x, y, w, h
+
+
+def _annotate_detection_class(cls_path):
+    images = os.listdir(cls_path)
+    bboxs = []
+    for img in images:
+        bboxs.append(_extract_bbox(cv2.imread(os.path.join(cls_path, img))))
+    return bboxs
+
+
+def _annotate_detection_object(do_folder):    
+    gt_path = os.path.join(do_folder, 'ground_truth')
+    classes = list(os.walk(gt_path))[0][1]
+    print(f'Found {len(classes)} classes in {gt_path}')
+    print(f'Classes: {classes}') 
+    
+    class_annotations = {}   
+    for idx, cls in enumerate(classes):
+        class_annotations[idx] = _annotate_detection_class(os.path.join(gt_path, cls))
+        
+    return class_annotations
+
+
+def annotate_dataset(dataset_path):
+    detection_objects = list(os.walk('mvtec_anomaly_detection_data'))[0][1]
+    
+    annotation_objects = {}
+    
+    print(f'Found {len(detection_objects)} detection objects.')
+    # print name of all detection objects
+    print(f'Detection objects: {detection_objects}')
+    for idx, do in enumerate(detection_objects):
+        print(f'Annotating: {do} ({idx+1}/{len(detection_objects)})')
+        annotation_objects[idx] = _annotate_detection_object(os.path.join(dataset_path, do))
+        
+    return annotation_objects
