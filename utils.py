@@ -4,7 +4,6 @@ import glob
 from cv2 import COLOR_BGR2GRAY
 import numpy as np
 from scipy.cluster.vq import kmeans, vq
-import tensorflow as tf
 from sklearn.model_selection import train_test_split
 
 
@@ -326,15 +325,26 @@ def recopy_mvtec_yolo(dest_directory, img_directory, create_dir, MVTEC_CATEGORIE
     return True
 
 
+def _bbox_from_contours(contours):
+    xmin, ymin = contours[0][0][0]
+    xmax, ymax = contours[0][0][0]
+    
+    print(contours[0][0])
+    print(contours[0][0][0])
+    
+    for c in contours:
+        x, y, w, h = cv2.boundingRect(c)
+        xmin, xmax = min(x, xmin), max(x+w, xmax)
+        ymin, ymax = min(y, ymin), max(y+h, ymax)
+    
+    return xmin, ymin, xmax - xmin, ymax - ymin
+
+
 def _extract_bbox(img, as_percent=True):
-    """
-    Extracts the bounding box of the image.
-    """
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     ret, thresh = cv2.threshold(img_gray, 127, 255, 0)
     contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    cnt = contours[0]
-    x, y, w, h = cv2.boundingRect(cnt)
+    x, y, w, h = _bbox_from_contours(contours)
     if as_percent:
         x = x / img.shape[1]
         y = y / img.shape[0]
@@ -343,15 +353,32 @@ def _extract_bbox(img, as_percent=True):
     return x, y, w, h
 
 
-def _annotate_detection_class(cls_path):
-    images = os.listdir(cls_path)
+def _annotate_detection_class(cls_path, debug):
+    image_names = [x for x in os.listdir(cls_path) if 'debug' not in x]
     bboxs = []
-    for img in images:
-        bboxs.append(_extract_bbox(cv2.imread(os.path.join(cls_path, img))))
+    
+    if debug:
+        dpath = f"{cls_path}/debug"
+        if not os.path.isdir(dpath):
+            os.mkdir(dpath)
+    
+    for img_name in image_names:
+        img_abs_path = os.path.join(cls_path, img_name)
+        img = cv2.imread(img_abs_path)
+        if img is None:
+            print(img_abs_path)
+            assert False
+        bbox = _extract_bbox(img)
+        
+        if debug:
+            cv2.rectangle(img, (int(bbox[0] * img.shape[1]), int(bbox[1] * img.shape[0])), (int((bbox[0] + bbox[2]) * img.shape[1]), int((bbox[1] + bbox[3]) * img.shape[0])), (0, 255, 0), 2)
+            cv2.imwrite(os.path.join(cls_path, 'debug', img_name), img)
+        
+        bboxs.append(bbox)
     return bboxs
 
 
-def _annotate_detection_object(do_folder):    
+def _annotate_detection_object(do_folder, debug):    
     gt_path = os.path.join(do_folder, 'ground_truth')
     classes = list(os.walk(gt_path))[0][1]
     print(f'Found {len(classes)} classes in {gt_path}')
@@ -359,12 +386,12 @@ def _annotate_detection_object(do_folder):
     
     class_annotations = {}   
     for idx, cls in enumerate(classes):
-        class_annotations[idx] = _annotate_detection_class(os.path.join(gt_path, cls))
+        class_annotations[idx] = _annotate_detection_class(os.path.join(gt_path, cls), debug)
         
     return class_annotations
 
 
-def annotate_dataset(dataset_path):
+def annotate_dataset(dataset_path, debug=False):
     detection_objects = list(os.walk('mvtec_anomaly_detection_data'))[0][1]
     
     annotation_objects = {}
@@ -374,6 +401,6 @@ def annotate_dataset(dataset_path):
     print(f'Detection objects: {detection_objects}')
     for idx, do in enumerate(detection_objects):
         print(f'Annotating: {do} ({idx+1}/{len(detection_objects)})')
-        annotation_objects[idx] = _annotate_detection_object(os.path.join(dataset_path, do))
+        annotation_objects[idx] = _annotate_detection_object(os.path.join(dataset_path, do), debug)
         
     return annotation_objects
