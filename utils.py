@@ -328,10 +328,7 @@ def recopy_mvtec_yolo(dest_directory, img_directory, create_dir, MVTEC_CATEGORIE
 def _bbox_from_contours(contours):
     xmin, ymin = contours[0][0][0]
     xmax, ymax = contours[0][0][0]
-    
-    print(contours[0][0])
-    print(contours[0][0][0])
-    
+
     for c in contours:
         x, y, w, h = cv2.boundingRect(c)
         xmin, xmax = min(x, xmin), max(x+w, xmax)
