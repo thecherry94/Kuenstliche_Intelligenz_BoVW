@@ -359,8 +359,10 @@ def _annotate_detection_class(cls_path, debug):
         if not os.path.isdir(dpath):
             os.mkdir(dpath)
     
+    imgs_abs_path = []
     for img_name in image_names:
         img_abs_path = os.path.join(cls_path, img_name)
+        
         img = cv2.imread(img_abs_path)
         if img is None:
             print(img_abs_path)
@@ -372,7 +374,8 @@ def _annotate_detection_class(cls_path, debug):
             cv2.imwrite(os.path.join(cls_path, 'debug', img_name), img)
         
         bboxs.append(bbox)
-    return bboxs
+        imgs_abs_path.append(img_abs_path)
+    return bboxs, imgs_abs_path
 
 
 def _annotate_detection_object(do_folder, debug):    
@@ -401,3 +404,30 @@ def annotate_dataset(dataset_path, debug=False):
         annotation_objects[idx] = _annotate_detection_object(os.path.join(dataset_path, do), debug)
         
     return annotation_objects
+
+
+def train_test_split_annotations(annotations, object_type, train_size=0.8, validation_size=0.5):
+    tt_split = train_size
+    val_split = validation_size
+    object_types = ['bottle', 'cable', 'capsule', 'carpet', 'grid', 'hazelnut', 'leather', 'metal_nut', 'pill', 'screw', 'tile', 'toothbrush', 'transistor', 'wood', 'zipper']
+
+    object_idx = object_types.index(object_type)
+
+    cls_objects = annotations[str(object_idx)]
+
+    train_ds = {}
+    test_ds = {}
+    val_ds = {}
+
+    for k, v in cls_objects.items():
+        train_ratio = int(len(v[0])*tt_split)
+        test_ratio_a, test_ratio_b = int(len(v[0])*tt_split), int(len(v[0])*(1-(1-tt_split)*val_split))
+        val_ratio = test_ratio_b
+        
+        train_annotations, train_img_paths = v[0][:train_ratio], v[1][:train_ratio]
+        test_annotations, test_img_paths = v[0][test_ratio_a:test_ratio_b], v[1][test_ratio_a:test_ratio_b]
+        val_annotations, val_img_paths = v[0][val_ratio:], v[1][val_ratio:]
+        
+        train_ds[k] = (train_annotations, train_img_paths)
+        test_ds[k] = (test_annotations, test_img_paths)
+        val_ds[k] = (val_annotations, val_img_paths)
