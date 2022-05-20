@@ -3,8 +3,10 @@ import cv2
 import glob
 from cv2 import COLOR_BGR2GRAY
 import numpy as np
+import fnmatch
 from scipy.cluster.vq import kmeans, vq
 from sklearn.model_selection import train_test_split
+import pickle
 
 
 def load_mvtec_dataset(directory, object_type, resize_dim=0):
@@ -343,10 +345,10 @@ def _extract_bbox(img, as_percent=True):
     contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     x, y, w, h = _bbox_from_contours(contours)
     if as_percent:
-        x = x / img.shape[1]
-        y = y / img.shape[0]
-        w = w / img.shape[1]
-        h = h / img.shape[0]
+        x = round(x / img.shape[1], 3)
+        y = round(y / img.shape[0], 3)
+        w = round(w / img.shape[1], 3)
+        h = round(h / img.shape[0], 3)
     return x, y, w, h
 
 
@@ -392,7 +394,7 @@ def _annotate_detection_object(do_folder, debug):
 
 
 def annotate_dataset(dataset_path, debug=False):
-    detection_objects = list(os.walk('mvtec_anomaly_detection_data'))[0][1]
+    detection_objects = list(os.walk(dataset_path))[0][1]
     
     annotation_objects = {}
     
@@ -406,28 +408,35 @@ def annotate_dataset(dataset_path, debug=False):
     return annotation_objects
 
 
-def train_test_split_annotations(annotations, object_type, train_size=0.8, validation_size=0.5):
-    tt_split = train_size
-    val_split = validation_size
-    object_types = ['bottle', 'cable', 'capsule', 'carpet', 'grid', 'hazelnut', 'leather', 'metal_nut', 'pill', 'screw', 'tile', 'toothbrush', 'transistor', 'wood', 'zipper']
+def create_annotation_files(annotations):  
+    if not os.path.isdir('annotations'):
+        os.mkdir('annotations')
+    
+    for k_obj, v_obj in annotations.items():
+        with open(f"annotations/{k_obj}.txt", "w") as f:
+            for k_cls, v_cls in v_obj.items():
+                for bbox, abs_path in zip(v_cls[0], v_cls[1]):
+                    abs_path = abs_path.replace('ground_truth', 'test')
+                    abs_path = abs_path.replace('_mask', '')                   
+                    f.write(f'{k_cls} {bbox[0]} {bbox[1]} {bbox[2]} {bbox[3]} {abs_path}\n')
 
-    object_idx = object_types.index(object_type)
 
-    cls_objects = annotations[str(object_idx)]
+def load_annotation_file(object_type):
+    dataset = []
+    with open(f"annotations/{object_type}.txt", "r") as f:
+        for line in f:
+            line = line.strip()
+            cls, x, y, w, h, abs_path = line.split(' ')
+            x, y, w, h = float(x), float(y), float(w), float(h)
+            dataset.append((cls, (x, y, w, h), abs_path))
+    
+    return dataset
 
-    train_ds = {}
-    test_ds = {}
-    val_ds = {}
-
-    for k, v in cls_objects.items():
-        train_ratio = int(len(v[0])*tt_split)
-        test_ratio_a, test_ratio_b = int(len(v[0])*tt_split), int(len(v[0])*(1-(1-tt_split)*val_split))
-        val_ratio = test_ratio_b
-        
-        train_annotations, train_img_paths = v[0][:train_ratio], v[1][:train_ratio]
-        test_annotations, test_img_paths = v[0][test_ratio_a:test_ratio_b], v[1][test_ratio_a:test_ratio_b]
-        val_annotations, val_img_paths = v[0][val_ratio:], v[1][val_ratio:]
-        
-        train_ds[k] = (train_annotations, train_img_paths)
-        test_ds[k] = (test_annotations, test_img_paths)
-        val_ds[k] = (val_annotations, val_img_paths)
+def train_test_split_annotations(dataset, train_size=0.8, validation_size=0.5):
+    len_ds = len(dataset)
+    
+    train_ratio = int(len_ds*train_size)
+    test_ratio= int(len_ds*(1-(1-train_size)*validation_size))
+    val_ratio = test_ratio
+    
+    return dataset[:train_ratio], dataset[train_ratio:test_ratio], dataset[val_ratio:]
