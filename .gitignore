@@ -33,10 +33,13 @@ octave-workspace
 
 # Data folder
 mvtec_anomaly_detection_data/*
+Model/*
 
-mvtec_anomaly_detection_data_umsortiert/*
+mvtec_data_clf/*
 # Python cache
 __pycache__/*
 *.pyc
 myenv/*
+faster-rcnn/*
 yolov5/
+

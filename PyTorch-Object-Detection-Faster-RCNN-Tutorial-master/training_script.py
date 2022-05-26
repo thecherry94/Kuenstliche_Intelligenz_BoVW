@@ -12,7 +12,7 @@ from pytorch_lightning.callbacks import (
     LearningRateMonitor,
     ModelCheckpoint,
 )
-from pytorch_lightning.loggers.neptune import NeptuneLogger
+#from pytorch_lightning.loggers.neptune import NeptuneLogger
 from torch.utils.data import DataLoader
 
 from pytorch_faster_rcnn_tutorial.backbone_resnet import ResNetBackbones
@@ -74,9 +74,11 @@ def main():
     params = Params()
 
     # api key
-    api_key = os.environ[
+    api_key = "eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiI3ODY0NzVlZi0xYjQyLTQzM2YtYmU5Mi01ZmZjMzQ4ZjM4ZWMifQ=="
+    
+    """os.environ[
         "NEPTUNE"
-    ]  # if this throws an error, you didn't set your env var
+    ]  # if this throws an error, you didn't set your env var"""
 
     # save directory
     save_dir = os.getcwd() if not params.SAVE_DIR else params.SAVE_DIR
@@ -197,14 +199,14 @@ def main():
     )
 
     # neptune logger
-    neptune_logger = NeptuneLogger(
+    """neptune_logger = NeptuneLogger(
         api_key=api_key,
         project_name=f"{params.OWNER}/{params.PROJECT}",  # use your neptune name here
         experiment_name=params.PROJECT,
         params=params.__dict__,
-    )
+    )"""
 
-    assert neptune_logger.name  # http GET request to check if the project exists
+    #assert neptune_logger.name  # http GET request to check if the project exists
 
     # model init
     model = get_faster_rcnn_resnet(
@@ -237,7 +239,7 @@ def main():
         precision=params.PRECISION,  # try 16 with enable_pl_optimizer=False
         callbacks=[checkpoint_callback, learningrate_callback, early_stopping_callback],
         default_root_dir=save_dir,  # where checkpoints are saved to
-        logger=neptune_logger,
+        #logger=neptune_logger,
         log_every_n_steps=1,
         num_sanity_val_steps=0,
         max_epochs=params.MAXEPOCHS,
@@ -252,23 +254,23 @@ def main():
     trainer.test(ckpt_path="best", dataloaders=dataloader_test)
 
     # log packages
-    log_packages_neptune(neptune_logger=neptune_logger)
+    #log_packages_neptune(neptune_logger=neptune_logger)
 
     # log mapping as table
-    log_mapping_neptune(mapping=mapping, neptune_logger=neptune_logger)
+    #log_mapping_neptune(mapping=mapping, neptune_logger=neptune_logger)
 
     # log model
-    if params.LOG_MODEL:
+    """if params.LOG_MODEL:
         checkpoint_path = pathlib.Path(checkpoint_callback.best_model_path)
         log_model_neptune(
             checkpoint_path=checkpoint_path,
             save_directory=pathlib.Path.home(),
             name="best_model.pt",
             neptune_logger=neptune_logger,
-        )
+        )"""
 
     # stop logger
-    neptune_logger.experiment.stop()
+    #neptune_logger.experiment.stop()
     print("Finished")
 
 
