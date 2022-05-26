@@ -427,6 +427,7 @@ def load_annotation_file(object_type):
         for line in f:
             line = line.strip()
             cls, x, y, w, h, abs_path = line.split(' ')
+            cls = int(cls) + 1
             x, y, w, h = float(x), float(y), float(w), float(h)
             dataset.append((cls, (x, y, w, h), abs_path))
     
@@ -440,3 +441,40 @@ def train_test_split_annotations(dataset, train_size=0.8, validation_size=0.5):
     val_ratio = test_ratio
     
     return dataset[:train_ratio], dataset[train_ratio:test_ratio], dataset[val_ratio:]
+
+def train_test_split_annotations_even(dataset, train_size=0.8, validation_size=0.5):
+    sorted_cls = {}
+    for data in dataset:
+        if data[0] not in sorted_cls.keys():
+            sorted_cls[data[0]] = []
+               
+        sorted_cls[data[0]].append((data[0], data[1], data[2]))
+    
+    return_train = []
+    return_test = []
+    return_val = []
+    
+    for k, v in sorted_cls.items():
+        train_ratio = int(len(v)*train_size)
+        test_ratio= int(len(v)*(1-(1-train_size)*validation_size))
+        val_ratio = test_ratio
+        
+        return_train.extend(v[:train_ratio])
+        return_test.extend(v[train_ratio:test_ratio])
+        return_val.extend(v[val_ratio:])
+        
+    return return_train, return_test, return_val
+    
+
+def get_object_dict(dataset_path):
+    info = {}
+    for idx, obj in enumerate(list(os.walk(dataset_path))[0][1]):
+        info[idx] = obj
+    return info
+
+def get_class_dict(dataset_path, object_type):
+    info = {}
+    for idx, clss in enumerate(list(os.walk(os.path.join(dataset_path, object_type, 'ground_truth')))[0][1]):
+        info[idx+1] = clss  
+    
+    return info
