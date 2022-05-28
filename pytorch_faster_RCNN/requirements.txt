@@ -1,0 +1,10 @@
+albumentations==1.1.0
+matplotlib==3.5.2
+numpy==1.21.6
+opencv_python_headless==4.5.5.64
+pandas==1.4.2
+scikit_learn==1.1.1
+seaborn==0.11.2
+torch==1.11.0+cu113
+torchvision==0.12.0+cu113
+utils==1.0.1
