@@ -36,6 +36,7 @@ mvtec_anomaly_detection_data/*
 Model/*
 
 mvtec_data_clf/*
+mvtec_data_clf_rot/*
 # Python cache
 __pycache__/*
 *.pyc

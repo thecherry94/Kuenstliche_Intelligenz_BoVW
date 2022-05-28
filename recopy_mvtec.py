@@ -1,7 +1,7 @@
 import os
 from utils import recopy_mvtec_resnet
 
-dest_directory_resnet = 'mvtec_data_clf'
+dest_directory_resnet = 'mvtec_data_clf_rot'
 img_directory = 'mvtec_anomaly_detection_data'
 
 MVTEC_CATEGORIES = [
@@ -21,6 +21,7 @@ MVTEC_CATEGORIES = [
     "wood",
     "zipper",
 ]
+
 
 create_dir = 1
 recopy_mvtec_resnet(dest_directory_resnet, img_directory,create_dir, MVTEC_CATEGORIES, 0.25, 224)

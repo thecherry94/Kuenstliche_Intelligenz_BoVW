@@ -7,6 +7,8 @@ import fnmatch
 from scipy.cluster.vq import kmeans, vq
 from sklearn.model_selection import train_test_split
 import pickle
+import math
+import matplotlib.pyplot as plt
 
 
 import albumentations as A
@@ -176,6 +178,24 @@ def load_dataset(directory, object_type, resize_dim=0):
     return dataset
 
 
+def _rotation(image, angleInDegrees): # rotate image
+    h, w = image.shape[:2]
+    img_c = (w / 2, h / 2)
+
+    rot = cv2.getRotationMatrix2D(img_c, angleInDegrees, 1)
+
+    rad = math.radians(angleInDegrees)
+    sin = math.sin(rad)
+    cos = math.cos(rad)
+    b_w = int((h * abs(sin)) + (w * abs(cos)))
+    b_h = int((h * abs(cos)) + (w * abs(sin)))
+
+    rot[0, 2] += ((b_w / 2) - img_c[0])
+    rot[1, 2] += ((b_h / 2) - img_c[1])
+
+    outImg = cv2.warpAffine(image, rot, (b_w, b_h), flags=cv2.INTER_LINEAR)
+    return outImg
+
 def recopy_mvtec_resnet(dest_directory, img_directory, create_dir, MVTEC_CATEGORIES, test_val_size, resize_dim=0):
 
     if create_dir == 1: 
@@ -212,6 +232,19 @@ def recopy_mvtec_resnet(dest_directory, img_directory, create_dir, MVTEC_CATEGOR
         good_train, good_rem = train_test_split(good_images, test_size=test_val_size, random_state=1)
         good_test, good_val = train_test_split(good_rem, test_size=0.5, random_state=1)
 
+        good_train_old = good_train
+        for i in range(len(good_train_old)):
+            good_train.append(_rotation(good_train_old[i], 90))
+            good_train.append(_rotation(good_train_old[i], 180))
+            good_train.append(_rotation(good_train_old[i], 270))
+
+        good_val_old = good_val
+        for i in range(len(good_val_old)):
+            good_val.append(_rotation(good_val_old[i], 90))
+            good_val.append(_rotation(good_val_old[i], 180))
+            good_val.append(_rotation(good_val_old[i], 270))
+
+
         for i in range(len(good_train)):
             cv2.imwrite(f"{dest_directory}/{cat}/train/good/{i:03}.png", good_train[i])
         for i in range(len(good_test)):
@@ -221,6 +254,18 @@ def recopy_mvtec_resnet(dest_directory, img_directory, create_dir, MVTEC_CATEGOR
         
         bad_train, bad_rem = train_test_split(bad_images, test_size=test_val_size, random_state=1)
         bad_test, bad_val = train_test_split(bad_rem, test_size=0.5, random_state=1)
+
+        bad_train_old = bad_train
+        for i in range(len(bad_train_old)):
+            bad_train.append(_rotation(bad_train_old[i], 90))
+            bad_train.append(_rotation(bad_train_old[i], 180))
+            bad_train.append(_rotation(bad_train_old[i], 270))
+
+        bad_val_old = bad_val
+        for i in range(len(bad_val_old)):
+            bad_val.append(_rotation(bad_val_old[i], 90))
+            bad_val.append(_rotation(bad_val_old[i], 180))
+            bad_val.append(_rotation(bad_val_old[i], 270))
 
         for i in range(len(bad_train)):
             cv2.imwrite(f"{dest_directory}/{cat}/train/bad/{i:03}.png", bad_train[i])
