@@ -9,6 +9,9 @@ from sklearn.model_selection import train_test_split
 import pickle
 
 
+import albumentations as A
+from albumentations.pytorch.transforms import ToTensorV2
+
 def load_mvtec_dataset(directory, object_type, resize_dim=0):
     """
     Loads the MVTEC dataset of the specified object type. (bottle, cable, capsule, etc.)
@@ -478,3 +481,22 @@ def get_class_dict(dataset_path, object_type):
         info[idx+1] = clss  
     
     return info
+
+def inv_dict(d):
+    return dict((v, k) for k, v in d.items())
+
+def collate_fn(batch):
+    return tuple(zip(*batch)
+
+# Albumentations
+def get_train_transform(image_size):
+    return A.Compose([
+        A.RandomRotate90(p=0.5),
+        A.RandomSizedBBoxSafeCrop(image_size, image_size, p=0.5),
+        ToTensorV2(p=1.0)
+    ], bbox_params={'format': 'pascal_voc', 'label_fields': ['labels']})
+
+def get_valid_transform():
+    return A.Compose([
+        ToTensorV2(p=1.0)
+    ], bbox_params={'format': 'pascal_voc', 'label_fields': ['labels']})
