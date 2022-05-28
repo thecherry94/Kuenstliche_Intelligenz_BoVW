@@ -531,7 +531,7 @@ def inv_dict(d):
     return dict((v, k) for k, v in d.items())
 
 def collate_fn(batch):
-    return tuple(zip(*batch)
+    return tuple(zip(*batch))
 
 # Albumentations
 def get_train_transform(image_size):
