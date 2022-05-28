@@ -37,6 +37,7 @@ from MVTec_Dataset import MVTEC_Dataset, Averager
 
 
 import argparse
+from pprint import pprint
 
 
 
@@ -187,6 +188,12 @@ def main():
 
     y_pred = []
     y_true = []
+    
+    
+
+    iou_log = {}
+    for k, v in class_dict.items():
+        iou_log[k] = []
 
     for images, targets, image_ids in test_data_loader:
         
@@ -198,6 +205,9 @@ def main():
         
         exclude = []
         
+        boxes_pred = []
+        boxes_true = []
+        
         #print(outputs)
         pred_labels = []
         for i, item in enumerate(outputs):
@@ -205,6 +215,7 @@ def main():
                 exclude.append(i)
                 continue
             pred_labels.append(item['labels'][0].cpu().numpy())
+            boxes_pred.append(item['boxes'][0].cpu().detach().numpy())
         y_pred.extend(pred_labels)
         
         true_labels = []
@@ -212,8 +223,16 @@ def main():
             if i in exclude:
                 continue
             true_labels.append(item['labels'][0].cpu().numpy())
+            boxes_true.append(item['boxes'][0].cpu().detach().numpy())
         y_true.extend(true_labels)
         
+        for yp, yt in zip(pred_labels, true_labels):
+            if yp == yt:
+                for boxp, boxt in zip(boxes_pred, boxes_true):
+                    iou_log[int(yp)].append(utils.IOU(boxp, boxt))
+                    
+    for k in iou_log.keys():
+        iou_log[k] = np.mean(iou_log[k]) 
 
     cf_matrix = confusion_matrix(y_true, y_pred, normalize = 'true')
     df_cm = pd.DataFrame(cf_matrix, index = [i for i in class_dict.values()], columns = [i for i in class_dict.values()])
@@ -223,6 +242,13 @@ def main():
     if not os.path.isdir('cm'):
         os.mkdir('cm')
     plt.savefig(f'cm/confusion_matrix_{to_load}.png')
+    
+    if not os.path.exists('iou'):
+        os.mkdir('iou')
+        
+    with open(f'iou/iou_{to_load}.txt', 'w') as f:
+        for k, v in iou_log.items():
+            f.write(f'{class_dict[k]}: {v}\n')
     
     print('Confusion matrix saved.')
     print(f'Done with model training of {to_load}')
