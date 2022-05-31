@@ -34,7 +34,7 @@ octave-workspace
 # Data folder
 mvtec_anomaly_detection_data/*
 Model/*
-
+archiv/
 mvtec_data_clf/*
 mvtec_data_clf_rot/*
 # Python cache
