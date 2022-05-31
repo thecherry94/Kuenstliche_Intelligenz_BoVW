@@ -337,44 +337,6 @@ def load_mvtec(directory, object_type, resize_dim=0):
     return np.array(train_images), np.array(train_labels), np.array(test_images), np.array(test_labels), np.array(val_images), np.array(val_labels)
 
 
-def recopy_mvtec_yolo(dest_directory, img_directory, create_dir, MVTEC_CATEGORIES, test_val_size, resize_dim=0):
-
-    if create_dir == 1: 
-        os.mkdir(f"{dest_directory}")
-    for cat in MVTEC_CATEGORIES:
-        if create_dir == 1:
-            os.mkdir(f"{dest_directory}/{cat}")
-            os.mkdir(f"{dest_directory}/{cat}/images")
-            os.mkdir(f"{dest_directory}/{cat}/images/train")
-            os.mkdir(f"{dest_directory}/{cat}/images/test")
-            os.mkdir(f"{dest_directory}/{cat}/images/val")
-            os.mkdir(f"{dest_directory}/{cat}/labels")
-            os.mkdir(f"{dest_directory}/{cat}/labels/train")
-            os.mkdir(f"{dest_directory}/{cat}/labels/val")
-            
-        train_images, train_labels, test_images, test_labels, ground_truth_paths = load_mvtec_dataset(img_directory, cat)
-        print(cat)
-       
-        bad_images = []
-        for i in range(len(test_images)):
-            if resize_dim != 0:
-                img = cv2.resize(test_images[i], (resize_dim, resize_dim))
-            if test_labels[i] == 0:
-                bad_images.append(img)
-        
-        bad_train, bad_rem = train_test_split(bad_images, test_size=test_val_size, random_state=1)
-        bad_test, bad_val = train_test_split(bad_rem, test_size=0.5, random_state=1)
-
-        for i in range(len(bad_train)):
-            cv2.imwrite(f"{dest_directory}/{cat}/images/train/{i:03}.png", bad_train[i])
-        for i in range(len(bad_test)):
-            cv2.imwrite(f"{dest_directory}/{cat}/images/test/{i:03}.png", bad_test[i])
-        for i in range(len(bad_val)):
-            cv2.imwrite(f"{dest_directory}/{cat}/images/val/{i:03}.png", bad_val[i])
-        
-    return True
-
-
 def _bbox_from_contours(contours):
     xmin, ymin = contours[0][0][0]
     xmax, ymax = contours[0][0][0]
